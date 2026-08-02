@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ app_name }} — AI Resume Analyzer & ATS Checker</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container navbar-inner">
+            <a class="brand" href="/">
+                <span class="brand-mark"><i class="bi bi-highlighter"></i></span>
+                <span class="brand-text">{{ app_name }}</span>
+            </a>
+            <span class="navbar-tag">AI Resume Analyzer &amp; ATS Checker</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="tab-bar">
+            <span class="tab tab-active">
+                <i class="bi bi-file-earmark-text"></i> Resume Analyzer
+            </span>
+            <span class="tab tab-disabled">
+                <i class="bi bi-magic"></i> Resume Builder
+                <span class="badge-soon">Coming Soon</span>
+            </span>
+        </div>
+    </div>
+
+    <header class="hero">
+        <div class="container hero-grid">
+            <div class="hero-copy">
+                <span class="eyebrow">AI-Powered Resume Screening</span>
+                <h1>See your resume the way an ATS sees it.</h1>
+                <p class="hero-sub">
+                    Upload your resume, paste the job description, and get a clear,
+                    actionable breakdown of how well you match — before a recruiter
+                    ever opens the file.
+                </p>
+            </div>
+            <div class="hero-visual">
+                <svg viewBox="0 0 320 380" class="doc-scan" aria-hidden="true">
+                    <rect x="10" y="10" width="300" height="360" rx="16" class="doc-page"/>
+                    <rect x="34" y="42" width="140" height="14" rx="4" class="doc-line doc-title"/>
+                    <rect x="34" y="70" width="90" height="8" rx="4" class="doc-line"/>
+                    <rect x="34" y="106" width="252" height="10" rx="4" class="doc-line doc-mark"/>
+                    <rect x="34" y="126" width="200" height="10" rx="4" class="doc-line"/>
+                    <rect x="34" y="146" width="252" height="10" rx="4" class="doc-line doc-mark"/>
+                    <rect x="34" y="182" width="110" height="8" rx="4" class="doc-line"/>
+                    <rect x="34" y="204" width="252" height="10" rx="4" class="doc-line"/>
+                    <rect x="34" y="224" width="252" height="10" rx="4" class="doc-line doc-mark"/>
+                    <rect x="34" y="244" width="180" height="10" rx="4" class="doc-line"/>
+                    <rect x="34" y="280" width="110" height="8" rx="4" class="doc-line"/>
+                    <rect x="34" y="302" width="252" height="10" rx="4" class="doc-line doc-mark"/>
+                    <rect x="34" y="322" width="220" height="10" rx="4" class="doc-line"/>
+                    <line x1="10" y1="150" x2="310" y2="150" class="scan-line"/>
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+
+        <section class="row g-4 upload-section">
+            <div class="col-lg-7">
+                <div class="panel-card">
+                    <h2 class="panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Resume</h2>
+                    <p class="panel-subtitle">We'll analyze this file against your job description.</p>
+
+                    <div class="dropzone">
+                        <i class="bi bi-file-earmark-arrow-up dropzone-icon"></i>
+                        <p class="dropzone-text">Drag &amp; drop your resume here, or</p>
+                        <label class="btn btn-upload">
+                            <i class="bi bi-upload"></i> Upload Resume
+                            <input type="file" hidden>
+                        </label>
+                        <div class="format-badges">
+                            <span class="format-badge"><i class="bi bi-filetype-pdf"></i> PDF</span>
+                            <span class="format-badge"><i class="bi bi-filetype-docx"></i> DOCX</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="panel-card h-100 d-flex flex-column">
+                    <h2 class="panel-title"><i class="bi bi-clipboard-data"></i> Job Description</h2>
+                    <p class="panel-subtitle">Paste the role you're applying for.</p>
+                    <textarea class="form-control jd-textarea flex-grow-1"
+                              placeholder="Paste the job description here..."></textarea>
+                </div>
+            </div>
+        </section>
+
+        <section class="analyze-section">
+            <button class="btn btn-analyze" type="button">
+                <i class="bi bi-stars"></i> Analyze Resume
+            </button>
+        </section>
+
+        <section class="results-section">
+            <h2 class="section-heading">Analysis Results</h2>
+            <p class="section-subheading">Your results will appear here after analysis.</p>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
+                        <h3>ATS Score</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-file-text"></i></div>
+                        <h3>Resume Summary</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-key"></i></div>
+                        <h3>Missing Keywords</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-tools"></i></div>
+                        <h3>Missing Skills</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+                        <h3>Strengths</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                        <h3>Weaknesses</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-lightbulb"></i></div>
+                        <h3>Improvement Suggestions</h3>
+                        <p>Results will appear here after analysis.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <span>&copy; 2026 {{ app_name }}. Built to help you get past the filter.</span>
+        </div>
+    </footer>
+
+</body>
+</html>
