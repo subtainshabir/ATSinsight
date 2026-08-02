@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Form
 from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
-from app.services.analysis_service import prepare_for_analysis
+from app.services.analysis_service import run_resume_analysis
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -18,7 +18,9 @@ async def analyze(
     resume_size_display: str = Form(""),
     resume_page_count: str = Form(""),
 ):
-    analysis = prepare_for_analysis(resume_text, job_description)
+    result = run_resume_analysis(resume_text, job_description)
+    analysis = result["preparation"]
+    ai_result = result["ai_result"]
 
     upload_result = None
     extraction_result = None
@@ -45,5 +47,6 @@ async def analyze(
             "extraction_result": extraction_result,
             "job_description": job_description,
             "analysis": analysis,
+            "ai_result": ai_result,
         },
     )
