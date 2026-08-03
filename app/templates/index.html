@@ -75,18 +75,58 @@
                     <h2 class="panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Resume</h2>
                     <p class="panel-subtitle">We'll analyze this file against your job description.</p>
 
-                    <div class="dropzone">
-                        <i class="bi bi-file-earmark-arrow-up dropzone-icon"></i>
-                        <p class="dropzone-text">Drag &amp; drop your resume here, or</p>
-                        <label class="btn btn-upload">
-                            <i class="bi bi-upload"></i> Upload Resume
-                            <input type="file" hidden>
-                        </label>
-                        <div class="format-badges">
-                            <span class="format-badge"><i class="bi bi-filetype-pdf"></i> PDF</span>
-                            <span class="format-badge"><i class="bi bi-filetype-docx"></i> DOCX</span>
+                    <form action="/upload" method="post" enctype="multipart/form-data">
+                        <div class="dropzone">
+                            <i class="bi bi-file-earmark-arrow-up dropzone-icon"></i>
+                            <p class="dropzone-text">Click below to choose your resume file</p>
+                            <label class="btn btn-upload" for="resume-file">
+                                <i class="bi bi-upload"></i> Upload Resume
+                                <input type="file" name="resume" id="resume-file" accept=".pdf,.docx" hidden onchange="this.form.submit()">
+                            </label>
+                            <div class="format-badges">
+                                <span class="format-badge"><i class="bi bi-filetype-pdf"></i> PDF</span>
+                                <span class="format-badge"><i class="bi bi-filetype-docx"></i> DOCX</span>
+                            </div>
                         </div>
-                    </div>
+                    </form>
+
+                    {% if upload_result %}
+                        {% if upload_result.success %}
+                            <div class="upload-alert upload-success">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <div>
+                                    <strong>Upload successful!</strong>
+                                    <div class="upload-meta">
+                                        <span><i class="bi bi-file-earmark"></i> {{ upload_result.filename }}</span>
+                                        <span><i class="bi bi-tag"></i> {{ upload_result.file_type }}</span>
+                                        <span><i class="bi bi-hdd"></i> {{ upload_result.size_display }}</span>
+                                        {% if extraction_result and extraction_result.page_count %}
+                                            <span><i class="bi bi-files"></i> {{ extraction_result.page_count }} page(s)</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if extraction_result %}
+                                {% if extraction_result.success %}
+                                    <div class="extraction-panel">
+                                        <h3 class="extraction-title"><i class="bi bi-text-paragraph"></i> Extracted Resume Text</h3>
+                                        <pre class="extraction-text">{{ extraction_result.text }}</pre>
+                                    </div>
+                                {% else %}
+                                    <div class="upload-alert upload-error">
+                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                        <div>{{ extraction_result.error }}</div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                            <div class="upload-alert upload-error">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                <div>{{ upload_result.error }}</div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
             </div>
 
@@ -94,73 +134,224 @@
                 <div class="panel-card h-100 d-flex flex-column">
                     <h2 class="panel-title"><i class="bi bi-clipboard-data"></i> Job Description</h2>
                     <p class="panel-subtitle">Paste the role you're applying for.</p>
-                    <textarea class="form-control jd-textarea flex-grow-1"
-                              placeholder="Paste the job description here..."></textarea>
+
+                    {% if analysis and analysis.resume_error %}
+                        <div class="upload-alert upload-error">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <div>{{ analysis.resume_error }}</div>
+                        </div>
+                    {% endif %}
+
+                    <form id="jd-form" action="/analyze" method="post" class="d-flex flex-column flex-grow-1">
+                        <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
+                        <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
+                        <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
+                        <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
+                        <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
+
+                        <textarea class="form-control jd-textarea flex-grow-1" name="job_description"
+                                  placeholder="Paste the job description here...">{{ job_description or '' }}</textarea>
+
+                        {% if analysis and analysis.jd_result and not analysis.jd_result.success %}
+                            <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ analysis.jd_result.error }}</div>
+                        {% endif %}
+                    </form>
                 </div>
             </div>
         </section>
 
         <section class="analyze-section">
-            <button class="btn btn-analyze" type="button">
+            <button class="btn btn-analyze" type="submit" form="jd-form">
                 <i class="bi bi-stars"></i> Analyze Resume
             </button>
         </section>
 
         <section class="results-section">
-            <h2 class="section-heading">Analysis Results</h2>
-            <p class="section-subheading">Your results will appear here after analysis.</p>
+            {% if ai_result %}
+                {% if not ai_result.success %}
+                    <div class="upload-alert upload-error">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <div>{{ ai_result.error }}</div>
+                    </div>
+                {% elif not ai_result.data.is_resume %}
+                    <div class="upload-alert upload-error">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <div>
+                            <strong>The uploaded document does not appear to be a valid Resume or CV. Please upload a professional resume in PDF or DOCX format.</strong>
+                            <p class="mb-0 mt-1">Our AI identified this document as: <strong>{{ ai_result.data.document_type }}</strong>. {{ ai_result.data.validation_message }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    {% set r = ai_result.data %}
+                    <div class="ready-banner">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <div>
+                            <strong>Analysis complete</strong>
+                            <p>{{ r.validation_message }}</p>
+                        </div>
+                    </div>
 
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
-                        <h3>ATS Score</h3>
-                        <p>Results will appear here after analysis.</p>
+                    <h2 class="section-heading">Analysis Results</h2>
+                    <p class="section-subheading">Here's how your resume matches the job description.</p>
+
+                    <div class="row g-4">
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
+                                <h3>ATS Score</h3>
+                                <p class="result-score">{{ r.ats_score }}<span>/100</span></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-percent"></i></div>
+                                <h3>Resume Match</h3>
+                                <p class="result-score">{{ r.resume_match_percentage }}<span>%</span></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-file-text"></i></div>
+                                <h3>Resume Summary</h3>
+                                <p>{{ r.resume_summary }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+                                <h3>Strengths</h3>
+                                <ul class="result-list">
+                                    {% for item in r.strengths %}<li>{{ item }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                                <h3>Weaknesses</h3>
+                                <ul class="result-list">
+                                    {% for item in r.weaknesses %}<li>{{ item }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-key"></i></div>
+                                <h3>Missing Keywords</h3>
+                                <ul class="result-list">
+                                    {% for item in r.missing_keywords %}<li>{{ item }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-tools"></i></div>
+                                <h3>Missing Skills</h3>
+                                <ul class="result-list">
+                                    {% for item in r.missing_skills %}<li>{{ item }}</li>{% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-briefcase"></i></div>
+                                <h3>Experience Evaluation</h3>
+                                <p>{{ r.experience_evaluation }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-mortarboard"></i></div>
+                                <h3>Education Evaluation</h3>
+                                <p>{{ r.education_evaluation }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-cpu"></i></div>
+                                <h3>Technical Skills Evaluation</h3>
+                                <p>{{ r.technical_skills_evaluation }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-kanban"></i></div>
+                                <h3>Projects Evaluation</h3>
+                                <p>{{ r.projects_evaluation }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-patch-check"></i></div>
+                                <h3>Certifications Evaluation</h3>
+                                <p>{{ r.certifications_evaluation }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="result-card">
+                                <div class="result-icon"><i class="bi bi-star"></i></div>
+                                <h3>Overall Recommendation</h3>
+                                <p>{{ r.overall_recommendation }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <h2 class="section-heading">Analysis Results</h2>
+                <p class="section-subheading">Your results will appear here after analysis.</p>
+
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
+                            <h3>ATS Score</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-percent"></i></div>
+                            <h3>Resume Match</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-file-text"></i></div>
+                            <h3>Resume Summary</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+                            <h3>Strengths</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                            <h3>Weaknesses</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-key"></i></div>
+                            <h3>Missing Keywords</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-tools"></i></div>
+                            <h3>Missing Skills</h3>
+                            <p>Results will appear here after analysis.</p>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-file-text"></i></div>
-                        <h3>Resume Summary</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-key"></i></div>
-                        <h3>Missing Keywords</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-tools"></i></div>
-                        <h3>Missing Skills</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
-                        <h3>Strengths</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
-                        <h3>Weaknesses</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="result-card">
-                        <div class="result-icon"><i class="bi bi-lightbulb"></i></div>
-                        <h3>Improvement Suggestions</h3>
-                        <p>Results will appear here after analysis.</p>
-                    </div>
-                </div>
-            </div>
+            {% endif %}
         </section>
 
     </main>
