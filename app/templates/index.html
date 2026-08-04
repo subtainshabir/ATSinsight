@@ -295,6 +295,147 @@
                             </div>
                         </div>
                     </div>
+
+                    <h2 class="section-heading section-heading-spaced">Score Reasoning &amp; Improvement Plan</h2>
+                    <p class="section-subheading">Why you got this score, and what to do about it.</p>
+
+                    <div class="reason-card">
+                        <h3><i class="bi bi-question-circle"></i> Why This ATS Score?</h3>
+                        <div class="reason-grid">
+                            <div class="reason-item">
+                                <span class="reason-label">Overall Score</span>
+                                <p>{{ r.ats_score_reason }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Resume Match</span>
+                                <p>{{ r.match_reason }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Keyword Match</span>
+                                <p>{{ r.keyword_match_explanation }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Skills Match</span>
+                                <p>{{ r.skills_match_explanation }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Experience Match</span>
+                                <p>{{ r.experience_match_explanation }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Education Match</span>
+                                <p>{{ r.education_match_explanation }}</p>
+                            </div>
+                            <div class="reason-item">
+                                <span class="reason-label">Projects Match</span>
+                                <p>{{ r.projects_match_explanation }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 detail-row">
+                        <div class="col-lg-6">
+                            <div class="detail-card detail-positive">
+                                <h3><i class="bi bi-hand-thumbs-up"></i> Resume Strengths</h3>
+                                {% if r.strength_details %}
+                                    <div class="detail-list">
+                                        {% for item in r.strength_details %}
+                                            <div class="detail-item">
+                                                <strong>{{ item.title }}</strong>
+                                                <p>{{ item.explanation }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted-sm">No specific strengths were identified.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="detail-card detail-negative">
+                                <h3><i class="bi bi-exclamation-triangle"></i> Resume Weaknesses</h3>
+                                {% if r.weakness_details %}
+                                    <div class="detail-list">
+                                        {% for item in r.weakness_details %}
+                                            <div class="detail-item">
+                                                <strong>{{ item.title }}</strong>
+                                                <p>{{ item.explanation }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted-sm">No specific weaknesses were identified.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="priority-section">
+                        <h3><i class="bi bi-list-check"></i> Priority Improvements</h3>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <div class="priority-card priority-high">
+                                    <span class="priority-badge">High Priority</span>
+                                    {% if r.high_priority_improvements %}
+                                        {% for item in r.high_priority_improvements %}
+                                            <div class="priority-item">
+                                                <strong>{{ item.recommendation }}</strong>
+                                                <p>{{ item.reason }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted-sm">No high priority items identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="priority-card priority-medium">
+                                    <span class="priority-badge">Medium Priority</span>
+                                    {% if r.medium_priority_improvements %}
+                                        {% for item in r.medium_priority_improvements %}
+                                            <div class="priority-item">
+                                                <strong>{{ item.recommendation }}</strong>
+                                                <p>{{ item.reason }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted-sm">No medium priority items identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="priority-card priority-low">
+                                    <span class="priority-badge">Low Priority</span>
+                                    {% if r.low_priority_improvements %}
+                                        {% for item in r.low_priority_improvements %}
+                                            <div class="priority-item">
+                                                <strong>{{ item.recommendation }}</strong>
+                                                <p>{{ item.reason }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted-sm">No low priority items identified.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="score-compare-card">
+                        <h3><i class="bi bi-graph-up-arrow"></i> Estimated Improved Score</h3>
+                        <div class="score-compare">
+                            <div class="score-block">
+                                <span class="score-block-label">Current</span>
+                                <span class="score-block-value">{{ r.ats_score }}</span>
+                            </div>
+                            <i class="bi bi-arrow-right score-arrow"></i>
+                            <div class="score-block score-block-improved">
+                                <span class="score-block-label">After Improvements</span>
+                                <span class="score-block-value">{{ r.estimated_improved_score }}</span>
+                            </div>
+                        </div>
+                        <p class="score-disclaimer">This is an AI-generated estimate based on implementing the recommendations above, not a guaranteed outcome.</p>
+                    </div>
                 {% endif %}
             {% else %}
                 <h2 class="section-heading">Analysis Results</h2>
