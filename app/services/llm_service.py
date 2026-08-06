@@ -54,6 +54,12 @@ ENHANCEMENT_REQUIRED_FIELDS = [
     "estimated_new_ats_score",
 ]
 
+COVER_LETTER_REQUIRED_FIELDS = [
+    "cover_letter",
+    "key_strengths_used",
+    "matched_job_requirements",
+]
+
 SYSTEM_PROMPT = """You are an experienced ATS (Applicant Tracking System) engine, a senior technical recruiter, and a career coach combined into one expert reviewer.
 
 Your task has two stages.
@@ -104,6 +110,31 @@ Respond with ONLY a single valid JSON object and nothing else - no markdown, no 
   "estimated_improved_score": integer from 0 to 100 (use 0 if is_resume is false)
 }"""
 
+COVER_LETTER_SYSTEM_PROMPT = """You are an expert career coach and professional cover letter writer. You will be given a resume, a job description, a previous ATS analysis of that resume, and optionally an enhanced version of the resume with an improvement change log.
+
+Write a complete, professional cover letter tailored to the job description, using only information found in the resume (or the enhanced resume, if provided). The cover letter must read as a single flowing letter and include, in order:
+
+- A professional greeting (use a specific name only if one is clearly given in the job description, otherwise use a generic professional greeting such as "Dear Hiring Manager,").
+- An opening paragraph stating the role being applied for and genuine interest in it.
+- A paragraph explaining why the applicant fits the role, referencing the job description.
+- A paragraph highlighting relevant experience.
+- A paragraph or sentence highlighting relevant skills.
+- A paragraph or sentence highlighting relevant projects (only if the resume contains projects).
+- A closing paragraph reiterating interest and inviting next steps.
+- A professional sign-off (e.g. "Sincerely," followed by the applicant's name if it appears in the resume).
+
+Separate paragraphs with a blank line (\\n\\n) inside the "cover_letter" string. Use confident, natural, professional business language. Keep it concise (roughly 250-400 words).
+
+You MUST NOT invent work experience, employers, job titles, projects, certifications, degrees, technical skills, or achievements that are not present in the resume (or enhanced resume). Do not exaggerate scope, seniority, or impact beyond what is supported by the source material.
+
+Respond with ONLY a single valid JSON object and nothing else - no markdown, no code fences, no text before or after it. The JSON object must always contain exactly these fields:
+
+{
+  "cover_letter": string containing the full cover letter with paragraphs separated by blank lines,
+  "key_strengths_used": array of strings naming the resume strengths/skills actually referenced in the letter,
+  "matched_job_requirements": array of strings naming the job description requirements the letter addresses
+}"""
+
 ENHANCEMENT_SYSTEM_PROMPT = """You are an expert resume writer and career coach. You will be given an original resume, a job description, and a previous ATS analysis of that resume (including its score, weaknesses, and missing keywords).
 
 Your job is to rewrite the resume to be more ATS-friendly and better aligned with the job description, while strictly preserving factual accuracy.
@@ -131,7 +162,7 @@ Respond with ONLY a single valid JSON object and nothing else - no markdown, no 
   "change_log": array of objects like {"section": string, "before": string, "after": string, "reason": string}, one entry per section that was actually changed. "reason" must explain what changed, why, how it improves ATS compatibility, and which keywords were strengthened or incorporated. Do not include a change_log entry for a section that does not exist in the original resume.,
   "estimated_new_ats_score": integer from 0 to 100, your best estimate of the ATS score after these improvements. This is always an AI estimate, not a guarantee.
 }"""
-
+from typing import Optional
 
 def _call_groq_json(system_prompt: str, user_prompt: str) -> dict:
     if not settings.groq_api_key:
@@ -209,12 +240,39 @@ def _build_enhancement_prompt(resume_text: str, job_description: str, previous_a
     )
 
 
+def _build_cover_letter_prompt(
+    resume_text: str,
+    job_description: str,
+    ats_analysis: dict,
+    enhancement_data: Optional[dict],
+) -> str:
+    enhancement_section = (
+        json.dumps(enhancement_data) if enhancement_data else "No resume enhancement has been generated yet."
+    )
+    return (
+        "Write a cover letter based on the following.\n\n"
+        "RESUME TEXT:\n"
+        f'"""{resume_text}"""\n\n'
+        "JOB DESCRIPTION:\n"
+        f'"""{job_description}"""\n\n'
+        "PREVIOUS ATS ANALYSIS (for context on strongest matches to emphasize):\n"
+        f'"""{json.dumps(ats_analysis)}"""\n\n'
+        "RESUME ENHANCEMENT (use this improved wording if available, otherwise rely on the resume text above):\n"
+        f'"""{enhancement_section}"""\n\n'
+        "Respond with only the JSON object described in your instructions."
+    )
+
+
 def _validate_json_shape(data: dict) -> bool:
     return all(field in data for field in REQUIRED_FIELDS)
 
 
 def _validate_enhancement_shape(data: dict) -> bool:
     return all(field in data for field in ENHANCEMENT_REQUIRED_FIELDS)
+
+
+def _validate_cover_letter_shape(data: dict) -> bool:
+    return all(field in data for field in COVER_LETTER_REQUIRED_FIELDS)
 
 
 def analyze_resume(resume_text: str, job_description: str) -> dict:
@@ -237,6 +295,24 @@ def enhance_resume(resume_text: str, job_description: str, previous_analysis: di
         return result
 
     if not _validate_enhancement_shape(result["data"]):
+        return {"success": False, "error": "The AI response was missing expected information. Please try again."}
+
+    return result
+
+
+def generate_cover_letter(
+    resume_text: str,
+    job_description: str,
+    ats_analysis: dict,
+    enhancement_data: Optional[dict],
+) -> dict:
+    prompt = _build_cover_letter_prompt(resume_text, job_description, ats_analysis, enhancement_data)
+    result = _call_groq_json(COVER_LETTER_SYSTEM_PROMPT, prompt)
+
+    if not result["success"]:
+        return result
+
+    if not _validate_cover_letter_shape(result["data"]):
         return {"success": False, "error": "The AI response was missing expected information. Please try again."}
 
     return result

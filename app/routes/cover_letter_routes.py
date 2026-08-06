@@ -4,14 +4,14 @@ from fastapi import APIRouter, Request, Form
 from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
-from app.services.enhancement_service import run_resume_enhancement
+from app.services.cover_letter_service import run_cover_letter_generation
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.post("/improve")
-async def improve_resume(
+@router.post("/cover-letter")
+async def cover_letter(
     request: Request,
     job_description: str = Form(""),
     resume_text: str = Form(""),
@@ -20,8 +20,11 @@ async def improve_resume(
     resume_size_display: str = Form(""),
     resume_page_count: str = Form(""),
     previous_analysis: str = Form(""),
+    enhancement_data: str = Form(""),
 ):
-    enhancement_result = run_resume_enhancement(resume_text, job_description, previous_analysis)
+    cover_letter_result = run_cover_letter_generation(
+        resume_text, job_description, previous_analysis, enhancement_data
+    )
 
     upload_result = None
     extraction_result = None
@@ -48,17 +51,27 @@ async def improve_resume(
         except json.JSONDecodeError:
             ai_result = None
 
+    enhancement_result = None
+    enhancement_json = None
+    if enhancement_data.strip():
+        try:
+            enhancement_data_parsed = json.loads(enhancement_data)
+            enhancement_result = {"success": True, "data": enhancement_data_parsed}
+            enhancement_json = enhancement_data
+        except json.JSONDecodeError:
+            enhancement_result = None
+
     analysis = {
         "ready": True,
         "resume_error": None,
         "jd_result": {"success": True, "text": job_description},
     }
 
-    enhancement_json = None
-    if enhancement_result.get("success"):
-        enhancement_json = json.dumps(enhancement_result["data"])
+    cover_letter_json = None
+    if cover_letter_result.get("success"):
+        cover_letter_json = json.dumps(cover_letter_result["data"])
 
-    scroll_target = "enhancement-section" if ai_result else "results-section"
+    scroll_target = "cover-letter-section" if ai_result else "results-section"
 
     return templates.TemplateResponse(
         "index.html",
@@ -73,6 +86,8 @@ async def improve_resume(
             "previous_analysis_json": previous_analysis_json,
             "enhancement_result": enhancement_result,
             "enhancement_json": enhancement_json,
+            "cover_letter_result": cover_letter_result,
+            "cover_letter_json": cover_letter_json,
             "scroll_target": scroll_target,
         },
     )

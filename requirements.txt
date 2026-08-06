@@ -6,3 +6,4 @@ pypdf
 python-docx
 groq
 python-dotenv
+reportlab

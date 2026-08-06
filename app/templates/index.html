@@ -11,7 +11,7 @@
 
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
 </head>
-<body>
+<body data-scroll-target="{{ scroll_target or '' }}">
 
     <nav class="navbar">
         <div class="container navbar-inner">
@@ -69,7 +69,7 @@
 
     <main class="container main-content">
 
-        <section class="row g-4 upload-section">
+        <section id="upload-section" class="row g-4 upload-section">
             <div class="col-lg-7">
                 <div class="panel-card">
                     <h2 class="panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Resume</h2>
@@ -166,7 +166,13 @@
             </button>
         </section>
 
-        <section class="results-section">
+        <section id="results-section" class="results-section">
+            {% if export_error %}
+                <div class="upload-alert upload-error">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <div>{{ export_error }}</div>
+                </div>
+            {% endif %}
             {% if ai_result %}
                 {% if not ai_result.success %}
                     <div class="upload-alert upload-error">
@@ -436,6 +442,242 @@
                         </div>
                         <p class="score-disclaimer">This is an AI-generated estimate based on implementing the recommendations above, not a guaranteed outcome.</p>
                     </div>
+
+                    <section id="enhancement-section" class="enhancement-section">
+                        <h2 class="section-heading section-heading-spaced">Resume Enhancement</h2>
+                        <p class="section-subheading">Let the AI rewrite your resume for better ATS compatibility, based on this analysis.</p>
+
+                        <form action="/improve" method="post" class="improve-form">
+                            <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
+                            <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
+                            <input type="hidden" name="job_description" value="{{ job_description or '' }}">
+                            <input type="hidden" name="previous_analysis" value="{{ previous_analysis_json or '' }}">
+                            <button type="submit" class="btn btn-improve">
+                                <i class="bi bi-magic"></i> Improve Resume
+                            </button>
+                        </form>
+
+                        {% if enhancement_result %}
+                            {% if not enhancement_result.success %}
+                                <div class="upload-alert upload-error">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    <div>{{ enhancement_result.error }}</div>
+                                </div>
+                            {% else %}
+                                {% set e = enhancement_result.data %}
+
+                                <div class="score-compare-card">
+                                    <h3><i class="bi bi-graph-up-arrow"></i> Estimated New ATS Score</h3>
+                                    <div class="score-compare">
+                                        <div class="score-block">
+                                            <span class="score-block-label">Original</span>
+                                            <span class="score-block-value">{{ r.ats_score }}</span>
+                                        </div>
+                                        <i class="bi bi-arrow-right score-arrow"></i>
+                                        <div class="score-block score-block-improved">
+                                            <span class="score-block-label">Estimated New Score</span>
+                                            <span class="score-block-value">{{ e.estimated_new_ats_score }}</span>
+                                        </div>
+                                    </div>
+                                    <p class="score-disclaimer">This is an AI-generated estimate of the improved resume's score, not a guaranteed outcome.</p>
+                                </div>
+
+                                <div class="row g-4 comparison-row">
+                                    <div class="col-lg-6">
+                                        <div class="comparison-card">
+                                            <h3><i class="bi bi-file-earmark"></i> Original Resume</h3>
+                                            <pre class="extraction-text">{{ extraction_result.text if extraction_result and extraction_result.success else '' }}</pre>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <div class="comparison-card comparison-improved">
+                                            <h3><i class="bi bi-stars"></i> Improved Resume</h3>
+                                            <div class="improved-resume">
+                                                {% if e.improved_summary %}
+                                                    <div class="resume-section">
+                                                        <h4>Professional Summary <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <p>{{ e.improved_summary }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                {% if e.improved_experience %}
+                                                    <div class="resume-section">
+                                                        <h4>Experience <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <ul>
+                                                            {% for item in e.improved_experience %}<li>{{ item }}</li>{% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                                {% if e.improved_projects %}
+                                                    <div class="resume-section">
+                                                        <h4>Projects <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <ul>
+                                                            {% for item in e.improved_projects %}<li>{{ item }}</li>{% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                                {% if e.improved_skills %}
+                                                    <div class="resume-section">
+                                                        <h4>Skills <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <ul>
+                                                            {% for item in e.improved_skills %}<li>{{ item }}</li>{% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+                                                {% if e.improved_education %}
+                                                    <div class="resume-section">
+                                                        <h4>Education <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <p>{{ e.improved_education }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                {% if e.improved_certifications %}
+                                                    <div class="resume-section">
+                                                        <h4>Certifications <span class="rewritten-badge">Rewritten</span></h4>
+                                                        <p>{{ e.improved_certifications }}</p>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="change-log">
+                                    <h3><i class="bi bi-clock-history"></i> Change Log</h3>
+                                    {% if e.change_log %}
+                                        {% for change in e.change_log %}
+                                            <div class="change-item">
+                                                <span class="change-section-badge">{{ change.section }}</span>
+                                                <div class="change-columns">
+                                                    <div class="change-before">
+                                                        <span class="change-label">Before</span>
+                                                        <p>{{ change.before }}</p>
+                                                    </div>
+                                                    <div class="change-after">
+                                                        <span class="change-label">After</span>
+                                                        <p>{{ change.after }}</p>
+                                                    </div>
+                                                </div>
+                                                <p class="change-reason"><i class="bi bi-info-circle"></i> {{ change.reason }}</p>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <p class="text-muted-sm">No sections needed changes.</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </section>
+
+                    <section id="cover-letter-section" class="cover-letter-section">
+                        <h2 class="section-heading section-heading-spaced">Cover Letter</h2>
+                        <p class="section-subheading">Generate a tailored cover letter based on your resume, the job description, and this analysis.</p>
+
+                        <form action="/cover-letter" method="post" class="improve-form">
+                            <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
+                            <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
+                            <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
+                            <input type="hidden" name="job_description" value="{{ job_description or '' }}">
+                            <input type="hidden" name="previous_analysis" value="{{ previous_analysis_json or '' }}">
+                            <input type="hidden" name="enhancement_data" value="{{ enhancement_json or '' }}">
+                            <button type="submit" class="btn btn-improve">
+                                <i class="bi bi-envelope-paper"></i> Generate Cover Letter
+                            </button>
+                        </form>
+
+                        {% if cover_letter_result %}
+                            {% if not cover_letter_result.success %}
+                                <div class="upload-alert upload-error">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    <div>{{ cover_letter_result.error }}</div>
+                                </div>
+                            {% else %}
+                                {% set cl = cover_letter_result.data %}
+                                <div class="cover-letter-card">
+                                    <div class="cover-letter-header">
+                                        <h3><i class="bi bi-envelope-paper"></i> Your Cover Letter</h3>
+                                        <div class="cover-letter-actions">
+                                            <button type="button" id="copy-cover-letter-btn" class="btn btn-export-sm" onclick="copyCoverLetter()">
+                                                <i class="bi bi-clipboard"></i> Copy
+                                            </button>
+                                            <a class="btn btn-export-sm" download="cover_letter.txt" href="data:text/plain;charset=utf-8,{{ cl.cover_letter | urlencode }}">
+                                                <i class="bi bi-download"></i> Download as TXT
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <textarea id="cover-letter-raw" hidden readonly>{{ cl.cover_letter }}</textarea>
+                                    <pre class="cover-letter-preview">{{ cl.cover_letter }}</pre>
+
+                                    <div class="cover-letter-tags">
+                                        <div class="tag-group">
+                                            <span class="reason-label">Key Strengths Used</span>
+                                            <div class="tag-list">
+                                                {% if cl.key_strengths_used %}
+                                                    {% for item in cl.key_strengths_used %}<span class="tag-chip">{{ item }}</span>{% endfor %}
+                                                {% else %}
+                                                    <span class="text-muted-sm">None identified.</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="tag-group">
+                                            <span class="reason-label">Matched Job Requirements</span>
+                                            <div class="tag-list">
+                                                {% if cl.matched_job_requirements %}
+                                                    {% for item in cl.matched_job_requirements %}<span class="tag-chip">{{ item }}</span>{% endfor %}
+                                                {% else %}
+                                                    <span class="text-muted-sm">None identified.</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </section>
+
+                    <section id="export-section" class="export-section no-print">
+                        <h2 class="section-heading section-heading-spaced">Export Report</h2>
+                        <p class="section-subheading">Save or print a complete copy of your analysis, enhancement, and cover letter.</p>
+
+                        <div class="export-buttons">
+                            <form action="/export/pdf" method="post">
+                                <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
+                                <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
+                                <input type="hidden" name="job_description" value="{{ job_description or '' }}">
+                                <input type="hidden" name="previous_analysis" value="{{ previous_analysis_json or '' }}">
+                                <input type="hidden" name="enhancement_data" value="{{ enhancement_json or '' }}">
+                                <input type="hidden" name="cover_letter_data" value="{{ cover_letter_json or '' }}">
+                                <button type="submit" class="btn btn-export">
+                                    <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
+                                </button>
+                            </form>
+
+                            <form action="/export/txt" method="post">
+                                <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
+                                <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
+                                <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
+                                <input type="hidden" name="job_description" value="{{ job_description or '' }}">
+                                <input type="hidden" name="previous_analysis" value="{{ previous_analysis_json or '' }}">
+                                <input type="hidden" name="enhancement_data" value="{{ enhancement_json or '' }}">
+                                <input type="hidden" name="cover_letter_data" value="{{ cover_letter_json or '' }}">
+                                <button type="submit" class="btn btn-export">
+                                    <i class="bi bi-file-earmark-text"></i> Download Analysis as TXT
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn btn-export" onclick="window.print()">
+                                <i class="bi bi-printer"></i> Print Report
+                            </button>
+                        </div>
+                    </section>
                 {% endif %}
             {% else %}
                 <h2 class="section-heading">Analysis Results</h2>
@@ -502,6 +744,29 @@
             <span>&copy; 2026 {{ app_name }}. Built to help you get past the filter.</span>
         </div>
     </footer>
+    <script>
+        function copyCoverLetter() {
+            const text = document.getElementById('cover-letter-raw');
+            if (!text) return;
+            navigator.clipboard.writeText(text.value);
+            const btn = document.getElementById('copy-cover-letter-btn');
+            if (btn) {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check2"></i> Copied!';
+                setTimeout(() => { btn.innerHTML = original; }, 1500);
+            }
+        }
+
+        (function scrollToTarget() {
+            const targetId = document.body.getAttribute('data-scroll-target');
+            if (!targetId) return;
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            window.requestAnimationFrame(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        })();
+    </script>
 
 </body>
 </html>

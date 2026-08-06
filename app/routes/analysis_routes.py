@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Request, Form
 from fastapi.templating import Jinja2Templates
 
@@ -38,6 +40,15 @@ async def analyze(
             "page_count": int(resume_page_count) if resume_page_count.isdigit() else None,
         }
 
+    previous_analysis_json = None
+    if ai_result and ai_result.get("success") and ai_result["data"].get("is_resume"):
+        previous_analysis_json = json.dumps(ai_result["data"])
+
+    if analysis.get("resume_error") or (analysis.get("jd_result") and not analysis["jd_result"]["success"]):
+        scroll_target = "upload-section"
+    else:
+        scroll_target = "results-section"
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -48,5 +59,7 @@ async def analyze(
             "job_description": job_description,
             "analysis": analysis,
             "ai_result": ai_result,
+            "previous_analysis_json": previous_analysis_json,
+            "scroll_target": scroll_target,
         },
     )

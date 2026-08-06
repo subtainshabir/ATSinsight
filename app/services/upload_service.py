@@ -32,4 +32,5 @@ async def process_resume_upload(file: UploadFile) -> dict:
         "filename": file.filename,
         "file_type": extension.replace(".", "").upper(),
         "size_display": format_file_size(len(contents)),
+        "content": contents,
     }
