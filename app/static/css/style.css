@@ -19,6 +19,90 @@
   box-sizing: border-box;
 }
 
+.container {
+  width: 100%;
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Reusable grid layouts (replace Bootstrap's row/col system) */
+.results-grid,
+.priority-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.detail-row,
+.comparison-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 24px;
+}
+
+.panel-card-fill {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.jd-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.alert-subtext {
+  margin: 4px 0 0;
+}
+
+@media (max-width: 991.98px) {
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .detail-row,
+  .comparison-row,
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .results-grid,
+  .priority-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 body {
   background-color: var(--paper);
   color: var(--ink);
@@ -266,19 +350,6 @@ h1, h2, h3, .brand-text {
   color: var(--paper);
 }
 
-.file-input {
-  max-width: 320px;
-  margin: 0 auto 16px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  font-size: 0.9rem;
-}
-
-.file-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(242, 169, 59, 0.25);
-}
-
 .upload-alert {
   display: flex;
   align-items: flex-start;
@@ -405,12 +476,18 @@ h1, h2, h3, .brand-text {
 
 /* Job description */
 .jd-textarea {
+  width: 100%;
+  flex: 1;
   resize: none;
   min-height: 220px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   padding: 16px;
   font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--surface);
+  outline: none;
 }
 
 .jd-textarea:focus {
@@ -582,10 +659,6 @@ h1, h2, h3, .brand-text {
   color: var(--ink-soft);
   font-size: 0.9rem;
   line-height: 1.5;
-}
-
-.detail-row {
-  margin-top: 24px;
 }
 
 .detail-card {
@@ -787,10 +860,6 @@ h1, h2, h3, .brand-text {
 .btn-improve:hover {
   background: #E09A2E;
   color: var(--accent-ink);
-}
-
-.comparison-row {
-  margin-top: 24px;
 }
 
 .comparison-card {

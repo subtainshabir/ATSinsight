@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }} — AI Resume Analyzer & ATS Checker</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', path='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='vendor/fonts/fonts.css') }}" rel="stylesheet">
 
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
 </head>
@@ -69,8 +68,8 @@
 
     <main class="container main-content">
 
-        <section id="upload-section" class="row g-4 upload-section">
-            <div class="col-lg-7">
+        <section id="upload-section" class="upload-grid">
+            <div class="upload-grid-primary">
                 <div class="panel-card">
                     <h2 class="panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Resume</h2>
                     <p class="panel-subtitle">We'll analyze this file against your job description.</p>
@@ -130,8 +129,8 @@
                 </div>
             </div>
 
-            <div class="col-lg-5">
-                <div class="panel-card h-100 d-flex flex-column">
+            <div class="upload-grid-secondary">
+                <div class="panel-card panel-card-fill">
                     <h2 class="panel-title"><i class="bi bi-clipboard-data"></i> Job Description</h2>
                     <p class="panel-subtitle">Paste the role you're applying for.</p>
 
@@ -142,14 +141,14 @@
                         </div>
                     {% endif %}
 
-                    <form id="jd-form" action="/analyze" method="post" class="d-flex flex-column flex-grow-1">
+                    <form id="jd-form" action="/analyze" method="post" class="jd-form">
                         <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                         <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
 
-                        <textarea class="form-control jd-textarea flex-grow-1" name="job_description"
+                        <textarea class="jd-textarea" name="job_description"
                                   placeholder="Paste the job description here...">{{ job_description or '' }}</textarea>
 
                         {% if analysis and analysis.jd_result and not analysis.jd_result.success %}
@@ -184,7 +183,7 @@
                         <i class="bi bi-exclamation-circle-fill"></i>
                         <div>
                             <strong>The uploaded document does not appear to be a valid Resume or CV. Please upload a professional resume in PDF or DOCX format.</strong>
-                            <p class="mb-0 mt-1">Our AI identified this document as: <strong>{{ ai_result.data.document_type }}</strong>. {{ ai_result.data.validation_message }}</p>
+                            <p class="alert-subtext">Our AI identified this document as: <strong>{{ ai_result.data.document_type }}</strong>. {{ ai_result.data.validation_message }}</p>
                         </div>
                     </div>
                 {% else %}
@@ -200,105 +199,79 @@
                     <h2 class="section-heading">Analysis Results</h2>
                     <p class="section-subheading">Here's how your resume matches the job description.</p>
 
-                    <div class="row g-4">
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
-                                <h3>ATS Score</h3>
-                                <p class="result-score">{{ r.ats_score }}<span>/100</span></p>
-                            </div>
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
+                            <h3>ATS Score</h3>
+                            <p class="result-score">{{ r.ats_score }}<span>/100</span></p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-percent"></i></div>
-                                <h3>Resume Match</h3>
-                                <p class="result-score">{{ r.resume_match_percentage }}<span>%</span></p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-percent"></i></div>
+                            <h3>Resume Match</h3>
+                            <p class="result-score">{{ r.resume_match_percentage }}<span>%</span></p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-file-text"></i></div>
-                                <h3>Resume Summary</h3>
-                                <p>{{ r.resume_summary }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-file-text"></i></div>
+                            <h3>Resume Summary</h3>
+                            <p>{{ r.resume_summary }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
-                                <h3>Strengths</h3>
-                                <ul class="result-list">
-                                    {% for item in r.strengths %}<li>{{ item }}</li>{% endfor %}
-                                </ul>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+                            <h3>Strengths</h3>
+                            <ul class="result-list">
+                                {% for item in r.strengths %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
-                                <h3>Weaknesses</h3>
-                                <ul class="result-list">
-                                    {% for item in r.weaknesses %}<li>{{ item }}</li>{% endfor %}
-                                </ul>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                            <h3>Weaknesses</h3>
+                            <ul class="result-list">
+                                {% for item in r.weaknesses %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-key"></i></div>
-                                <h3>Missing Keywords</h3>
-                                <ul class="result-list">
-                                    {% for item in r.missing_keywords %}<li>{{ item }}</li>{% endfor %}
-                                </ul>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-key"></i></div>
+                            <h3>Missing Keywords</h3>
+                            <ul class="result-list">
+                                {% for item in r.missing_keywords %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-tools"></i></div>
-                                <h3>Missing Skills</h3>
-                                <ul class="result-list">
-                                    {% for item in r.missing_skills %}<li>{{ item }}</li>{% endfor %}
-                                </ul>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-tools"></i></div>
+                            <h3>Missing Skills</h3>
+                            <ul class="result-list">
+                                {% for item in r.missing_skills %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-briefcase"></i></div>
-                                <h3>Experience Evaluation</h3>
-                                <p>{{ r.experience_evaluation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-briefcase"></i></div>
+                            <h3>Experience Evaluation</h3>
+                            <p>{{ r.experience_evaluation }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-mortarboard"></i></div>
-                                <h3>Education Evaluation</h3>
-                                <p>{{ r.education_evaluation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-mortarboard"></i></div>
+                            <h3>Education Evaluation</h3>
+                            <p>{{ r.education_evaluation }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-cpu"></i></div>
-                                <h3>Technical Skills Evaluation</h3>
-                                <p>{{ r.technical_skills_evaluation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-cpu"></i></div>
+                            <h3>Technical Skills Evaluation</h3>
+                            <p>{{ r.technical_skills_evaluation }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-kanban"></i></div>
-                                <h3>Projects Evaluation</h3>
-                                <p>{{ r.projects_evaluation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-kanban"></i></div>
+                            <h3>Projects Evaluation</h3>
+                            <p>{{ r.projects_evaluation }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-patch-check"></i></div>
-                                <h3>Certifications Evaluation</h3>
-                                <p>{{ r.certifications_evaluation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-patch-check"></i></div>
+                            <h3>Certifications Evaluation</h3>
+                            <p>{{ r.certifications_evaluation }}</p>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="result-card">
-                                <div class="result-icon"><i class="bi bi-star"></i></div>
-                                <h3>Overall Recommendation</h3>
-                                <p>{{ r.overall_recommendation }}</p>
-                            </div>
+                        <div class="result-card">
+                            <div class="result-icon"><i class="bi bi-star"></i></div>
+                            <h3>Overall Recommendation</h3>
+                            <p>{{ r.overall_recommendation }}</p>
                         </div>
                     </div>
 
@@ -339,90 +312,80 @@
                         </div>
                     </div>
 
-                    <div class="row g-4 detail-row">
-                        <div class="col-lg-6">
-                            <div class="detail-card detail-positive">
-                                <h3><i class="bi bi-hand-thumbs-up"></i> Resume Strengths</h3>
-                                {% if r.strength_details %}
-                                    <div class="detail-list">
-                                        {% for item in r.strength_details %}
-                                            <div class="detail-item">
-                                                <strong>{{ item.title }}</strong>
-                                                <p>{{ item.explanation }}</p>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <p class="text-muted-sm">No specific strengths were identified.</p>
-                                {% endif %}
-                            </div>
+                    <div class="detail-row">
+                        <div class="detail-card detail-positive">
+                            <h3><i class="bi bi-hand-thumbs-up"></i> Resume Strengths</h3>
+                            {% if r.strength_details %}
+                                <div class="detail-list">
+                                    {% for item in r.strength_details %}
+                                        <div class="detail-item">
+                                            <strong>{{ item.title }}</strong>
+                                            <p>{{ item.explanation }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted-sm">No specific strengths were identified.</p>
+                            {% endif %}
                         </div>
-                        <div class="col-lg-6">
-                            <div class="detail-card detail-negative">
-                                <h3><i class="bi bi-exclamation-triangle"></i> Resume Weaknesses</h3>
-                                {% if r.weakness_details %}
-                                    <div class="detail-list">
-                                        {% for item in r.weakness_details %}
-                                            <div class="detail-item">
-                                                <strong>{{ item.title }}</strong>
-                                                <p>{{ item.explanation }}</p>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <p class="text-muted-sm">No specific weaknesses were identified.</p>
-                                {% endif %}
-                            </div>
+                        <div class="detail-card detail-negative">
+                            <h3><i class="bi bi-exclamation-triangle"></i> Resume Weaknesses</h3>
+                            {% if r.weakness_details %}
+                                <div class="detail-list">
+                                    {% for item in r.weakness_details %}
+                                        <div class="detail-item">
+                                            <strong>{{ item.title }}</strong>
+                                            <p>{{ item.explanation }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-muted-sm">No specific weaknesses were identified.</p>
+                            {% endif %}
                         </div>
                     </div>
 
                     <div class="priority-section">
                         <h3><i class="bi bi-list-check"></i> Priority Improvements</h3>
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <div class="priority-card priority-high">
-                                    <span class="priority-badge">High Priority</span>
-                                    {% if r.high_priority_improvements %}
-                                        {% for item in r.high_priority_improvements %}
-                                            <div class="priority-item">
-                                                <strong>{{ item.recommendation }}</strong>
-                                                <p>{{ item.reason }}</p>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <p class="text-muted-sm">No high priority items identified.</p>
-                                    {% endif %}
-                                </div>
+                        <div class="priority-grid">
+                            <div class="priority-card priority-high">
+                                <span class="priority-badge">High Priority</span>
+                                {% if r.high_priority_improvements %}
+                                    {% for item in r.high_priority_improvements %}
+                                        <div class="priority-item">
+                                            <strong>{{ item.recommendation }}</strong>
+                                            <p>{{ item.reason }}</p>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted-sm">No high priority items identified.</p>
+                                {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <div class="priority-card priority-medium">
-                                    <span class="priority-badge">Medium Priority</span>
-                                    {% if r.medium_priority_improvements %}
-                                        {% for item in r.medium_priority_improvements %}
-                                            <div class="priority-item">
-                                                <strong>{{ item.recommendation }}</strong>
-                                                <p>{{ item.reason }}</p>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <p class="text-muted-sm">No medium priority items identified.</p>
-                                    {% endif %}
-                                </div>
+                            <div class="priority-card priority-medium">
+                                <span class="priority-badge">Medium Priority</span>
+                                {% if r.medium_priority_improvements %}
+                                    {% for item in r.medium_priority_improvements %}
+                                        <div class="priority-item">
+                                            <strong>{{ item.recommendation }}</strong>
+                                            <p>{{ item.reason }}</p>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted-sm">No medium priority items identified.</p>
+                                {% endif %}
                             </div>
-                            <div class="col-md-4">
-                                <div class="priority-card priority-low">
-                                    <span class="priority-badge">Low Priority</span>
-                                    {% if r.low_priority_improvements %}
-                                        {% for item in r.low_priority_improvements %}
-                                            <div class="priority-item">
-                                                <strong>{{ item.recommendation }}</strong>
-                                                <p>{{ item.reason }}</p>
-                                            </div>
-                                        {% endfor %}
-                                    {% else %}
-                                        <p class="text-muted-sm">No low priority items identified.</p>
-                                    {% endif %}
-                                </div>
+                            <div class="priority-card priority-low">
+                                <span class="priority-badge">Low Priority</span>
+                                {% if r.low_priority_improvements %}
+                                    {% for item in r.low_priority_improvements %}
+                                        <div class="priority-item">
+                                            <strong>{{ item.recommendation }}</strong>
+                                            <p>{{ item.reason }}</p>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted-sm">No low priority items identified.</p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -485,17 +448,14 @@
                                     <p class="score-disclaimer">This is an AI-generated estimate of the improved resume's score, not a guaranteed outcome.</p>
                                 </div>
 
-                                <div class="row g-4 comparison-row">
-                                    <div class="col-lg-6">
-                                        <div class="comparison-card">
-                                            <h3><i class="bi bi-file-earmark"></i> Original Resume</h3>
-                                            <pre class="extraction-text">{{ extraction_result.text if extraction_result and extraction_result.success else '' }}</pre>
-                                        </div>
+                                <div class="comparison-row">
+                                    <div class="comparison-card">
+                                        <h3><i class="bi bi-file-earmark"></i> Original Resume</h3>
+                                        <pre class="extraction-text">{{ extraction_result.text if extraction_result and extraction_result.success else '' }}</pre>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <div class="comparison-card comparison-improved">
-                                            <h3><i class="bi bi-stars"></i> Improved Resume</h3>
-                                            <div class="improved-resume">
+                                    <div class="comparison-card comparison-improved">
+                                        <h3><i class="bi bi-stars"></i> Improved Resume</h3>
+                                        <div class="improved-resume">
                                                 {% if e.improved_summary %}
                                                     <div class="resume-section">
                                                         <h4>Professional Summary <span class="rewritten-badge">Rewritten</span></h4>
@@ -541,7 +501,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
                                 <div class="change-log">
                                     <h3><i class="bi bi-clock-history"></i> Change Log</h3>
@@ -683,55 +642,41 @@
                 <h2 class="section-heading">Analysis Results</h2>
                 <p class="section-subheading">Your results will appear here after analysis.</p>
 
-                <div class="row g-4">
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
-                            <h3>ATS Score</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                <div class="results-grid">
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
+                        <h3>ATS Score</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-percent"></i></div>
-                            <h3>Resume Match</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-percent"></i></div>
+                        <h3>Resume Match</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-file-text"></i></div>
-                            <h3>Resume Summary</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-file-text"></i></div>
+                        <h3>Resume Summary</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
-                            <h3>Strengths</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-hand-thumbs-up"></i></div>
+                        <h3>Strengths</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
-                            <h3>Weaknesses</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                        <h3>Weaknesses</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-key"></i></div>
-                            <h3>Missing Keywords</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-key"></i></div>
+                        <h3>Missing Keywords</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-tools"></i></div>
-                            <h3>Missing Skills</h3>
-                            <p>Results will appear here after analysis.</p>
-                        </div>
+                    <div class="result-card">
+                        <div class="result-icon"><i class="bi bi-tools"></i></div>
+                        <h3>Missing Skills</h3>
+                        <p>Results will appear here after analysis.</p>
                     </div>
                 </div>
             {% endif %}
