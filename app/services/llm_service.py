@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 from groq import (
     Groq,
@@ -162,7 +163,7 @@ Respond with ONLY a single valid JSON object and nothing else - no markdown, no 
   "change_log": array of objects like {"section": string, "before": string, "after": string, "reason": string}, one entry per section that was actually changed. "reason" must explain what changed, why, how it improves ATS compatibility, and which keywords were strengthened or incorporated. Do not include a change_log entry for a section that does not exist in the original resume.,
   "estimated_new_ats_score": integer from 0 to 100, your best estimate of the ATS score after these improvements. This is always an AI estimate, not a guarantee.
 }"""
-from typing import Optional
+
 
 def _call_groq_json(system_prompt: str, user_prompt: str) -> dict:
     if not settings.groq_api_key:
@@ -304,7 +305,7 @@ def generate_cover_letter(
     resume_text: str,
     job_description: str,
     ats_analysis: dict,
-    enhancement_data: Optional[dict],
+    enhancement_data: Optional[dict] = None,
 ) -> dict:
     prompt = _build_cover_letter_prompt(resume_text, job_description, ats_analysis, enhancement_data)
     result = _call_groq_json(COVER_LETTER_SYSTEM_PROMPT, prompt)

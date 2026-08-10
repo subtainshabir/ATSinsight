@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
 from app.services.analysis_service import run_resume_analysis
+from app.services import history_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -26,6 +27,7 @@ async def analyze(
 
     upload_result = None
     extraction_result = None
+    page_count = int(resume_page_count) if resume_page_count.isdigit() else None
 
     if resume_text.strip():
         upload_result = {
@@ -37,12 +39,16 @@ async def analyze(
         extraction_result = {
             "success": True,
             "text": resume_text,
-            "page_count": int(resume_page_count) if resume_page_count.isdigit() else None,
+            "page_count": page_count,
         }
 
     previous_analysis_json = None
     if ai_result and ai_result.get("success") and ai_result["data"].get("is_resume"):
         previous_analysis_json = json.dumps(ai_result["data"])
+        history_service.add_analysis(
+            resume_filename, resume_file_type, resume_size_display, page_count,
+            resume_text, job_description, ai_result["data"],
+        )
 
     if analysis.get("resume_error") or (analysis.get("jd_result") and not analysis["jd_result"]["success"]):
         scroll_target = "upload-section"
@@ -61,5 +67,6 @@ async def analyze(
             "ai_result": ai_result,
             "previous_analysis_json": previous_analysis_json,
             "scroll_target": scroll_target,
+            "history": history_service.get_history(),
         },
     )

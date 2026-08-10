@@ -1146,6 +1146,7 @@ h1, h2, h3, .brand-text {
   .navbar,
   .tab-bar,
   .hero,
+  .history-section,
   .upload-section,
   .analyze-section,
   .improve-form,
@@ -1169,6 +1170,143 @@ h1, h2, h3, .brand-text {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
     break-inside: avoid;
+  }
+}
+
+.history-section {
+  margin-bottom: 48px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.history-header form {
+  margin: 0;
+}
+
+.history-header .section-heading {
+  margin-bottom: 0;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.history-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.history-filename {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.history-scores {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.history-score {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.history-score strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.history-summary {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.history-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.history-actions form {
+  margin: 0;
+}
+
+.btn-history-delete:hover {
+  background: rgba(192, 57, 43, 0.1);
+  border-color: rgba(192, 57, 43, 0.3);
+  color: var(--error);
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.history-empty i {
+  font-size: 1.8rem;
+  color: var(--accent-ink);
+}
+
+.history-empty p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 991.98px) {
+  .history-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .history-grid {
+    grid-template-columns: 1fr;
   }
 }
 

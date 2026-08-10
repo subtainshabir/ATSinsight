@@ -68,6 +68,52 @@
 
     <main class="container main-content">
 
+        <section id="history-section" class="history-section">
+            <div class="history-header">
+                <h2 class="section-heading">Recent Analyses</h2>
+                {% if history %}
+                    <form action="/history/clear" method="post">
+                        <button type="submit" class="btn btn-export-sm">
+                            <i class="bi bi-trash3"></i> Clear History
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+
+            {% if history %}
+                <div class="history-grid">
+                    {% for item in history %}
+                        <div class="history-card">
+                            <div class="history-card-top">
+                                <span class="history-filename"><i class="bi bi-file-earmark"></i> {{ item.filename }}</span>
+                                <span class="history-date">{{ item.created_at }}</span>
+                            </div>
+                            <div class="history-scores">
+                                <span class="history-score"><strong>{{ item.ats_score }}</strong>/100 ATS</span>
+                                <span class="history-score"><strong>{{ item.match_percentage }}%</strong> Match</span>
+                            </div>
+                            <p class="history-summary">{{ item.summary }}</p>
+                            <div class="history-actions">
+                                <a class="btn btn-export-sm" href="/history/view/{{ item.id }}">
+                                    <i class="bi bi-eye"></i> View Analysis
+                                </a>
+                                <form action="/history/delete/{{ item.id }}" method="post">
+                                    <button type="submit" class="btn btn-export-sm btn-history-delete">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="history-empty">
+                    <i class="bi bi-clock-history"></i>
+                    <p>No recent analyses yet. Upload your resume to get started.</p>
+                </div>
+            {% endif %}
+        </section>
+
         <section id="upload-section" class="upload-grid">
             <div class="upload-grid-primary">
                 <div class="panel-card">

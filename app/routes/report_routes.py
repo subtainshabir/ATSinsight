@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from app.config.settings import settings
 from app.services.report_service import build_report_context, generate_txt_report
 from app.services.pdf_report_service import generate_pdf_report
+from app.services import history_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -91,6 +92,7 @@ def _rebuild_page_context(
         "cover_letter_json": cover_letter_json,
         "export_error": export_error,
         "scroll_target": "results-section",
+        "history": history_service.get_history(),
     }
 
 
