@@ -3,7 +3,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
-from app.routes import upload_routes, analysis_routes, enhancement_routes, cover_letter_routes, report_routes
+from app.routes import upload_routes, analysis_routes, enhancement_routes, cover_letter_routes, report_routes, history_routes
+from app.services import history_service
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -13,6 +14,7 @@ app.include_router(analysis_routes.router)
 app.include_router(enhancement_routes.router)
 app.include_router(cover_letter_routes.router)
 app.include_router(report_routes.router)
+app.include_router(history_routes.router)
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -21,5 +23,5 @@ templates = Jinja2Templates(directory="app/templates")
 async def home(request: Request):
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "app_name": settings.app_name}
+        {"request": request, "app_name": settings.app_name, "history": history_service.get_history()}
     )

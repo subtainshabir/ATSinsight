@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
 from app.services.enhancement_service import run_resume_enhancement
+from app.services import history_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -74,5 +75,6 @@ async def improve_resume(
             "enhancement_result": enhancement_result,
             "enhancement_json": enhancement_json,
             "scroll_target": scroll_target,
+            "history": history_service.get_history(),
         },
     )

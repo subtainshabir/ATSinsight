@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from app.config.settings import settings
 from app.services.upload_service import process_resume_upload
 from app.services.extraction_service import extract_resume_text
+from app.services import history_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -25,5 +26,6 @@ async def upload_resume(request: Request, resume: UploadFile = File(...)):
             "upload_result": upload_result,
             "extraction_result": extraction_result,
             "scroll_target": "upload-section",
+            "history": history_service.get_history(),
         },
     )

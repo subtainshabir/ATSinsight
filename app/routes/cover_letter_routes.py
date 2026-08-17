@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config.settings import settings
 from app.services.cover_letter_service import run_cover_letter_generation
+from app.services import history_service
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -89,5 +90,6 @@ async def cover_letter(
             "cover_letter_result": cover_letter_result,
             "cover_letter_json": cover_letter_json,
             "scroll_target": scroll_target,
+            "history": history_service.get_history(),
         },
     )
