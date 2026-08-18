@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ app_name }} — AI Resume Analyzer & ATS Checker</title>
 
+    <script>
+        (function () {
+            var saved = localStorage.getItem('atsinsight-theme');
+            var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+
     <link href="{{ url_for('static', path='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', path='vendor/fonts/fonts.css') }}" rel="stylesheet">
 
@@ -12,13 +20,21 @@
 </head>
 <body data-scroll-target="{{ scroll_target or '' }}">
 
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <nav class="navbar">
         <div class="container navbar-inner">
             <a class="brand" href="/">
-                <span class="brand-mark"><i class="bi bi-highlighter"></i></span>
+                <span class="brand-mark"><i class="bi bi-highlighter" aria-hidden="true"></i></span>
                 <span class="brand-text">{{ app_name }}</span>
             </a>
-            <span class="navbar-tag">AI Resume Analyzer &amp; ATS Checker</span>
+            <div class="navbar-right">
+                <span class="navbar-tag">AI Resume Analyzer &amp; ATS Checker</span>
+                <button type="button" id="theme-toggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                    <i class="bi bi-moon-stars theme-icon-dark" aria-hidden="true"></i>
+                    <i class="bi bi-sun theme-icon-light" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -66,7 +82,7 @@
         </div>
     </header>
 
-    <main class="container main-content">
+    <main id="main-content" class="container main-content">
 
         <section id="history-section" class="history-section">
             <div class="history-header">
@@ -83,23 +99,25 @@
             {% if history %}
                 <div class="history-grid">
                     {% for item in history %}
+                        {% set h_ats = item.ats_score | int(0) %}
+                        {% set h_band = 'badge-low' if h_ats < 50 else ('badge-mid' if h_ats < 75 else 'badge-high') %}
                         <div class="history-card">
                             <div class="history-card-top">
-                                <span class="history-filename"><i class="bi bi-file-earmark"></i> {{ item.filename }}</span>
+                                <span class="history-filename"><i class="bi bi-file-earmark" aria-hidden="true"></i> {{ item.filename }}</span>
                                 <span class="history-date">{{ item.created_at }}</span>
                             </div>
                             <div class="history-scores">
-                                <span class="history-score"><strong>{{ item.ats_score }}</strong>/100 ATS</span>
-                                <span class="history-score"><strong>{{ item.match_percentage }}%</strong> Match</span>
+                                <span class="history-badge {{ h_band }}">{{ item.ats_score }}/100 ATS</span>
+                                <span class="history-badge history-badge-neutral">{{ item.match_percentage }}% Match</span>
                             </div>
                             <p class="history-summary">{{ item.summary }}</p>
                             <div class="history-actions">
-                                <a class="btn btn-export-sm" href="/history/view/{{ item.id }}">
-                                    <i class="bi bi-eye"></i> View Analysis
+                                <a class="btn btn-export-sm" href="/history/view/{{ item.id }}" title="View this analysis">
+                                    <i class="bi bi-eye" aria-hidden="true"></i> View Analysis
                                 </a>
                                 <form action="/history/delete/{{ item.id }}" method="post">
-                                    <button type="submit" class="btn btn-export-sm btn-history-delete">
-                                        <i class="bi bi-trash"></i> Delete
+                                    <button type="submit" class="btn btn-export-sm btn-history-delete" title="Delete this analysis">
+                                        <i class="bi bi-trash" aria-hidden="true"></i> Delete
                                     </button>
                                 </form>
                             </div>
@@ -108,7 +126,7 @@
                 </div>
             {% else %}
                 <div class="history-empty">
-                    <i class="bi bi-clock-history"></i>
+                    <i class="bi bi-clock-history" aria-hidden="true"></i>
                     <p>No recent analyses yet. Upload your resume to get started.</p>
                 </div>
             {% endif %}
@@ -120,17 +138,18 @@
                     <h2 class="panel-title"><i class="bi bi-cloud-arrow-up"></i> Upload Resume</h2>
                     <p class="panel-subtitle">We'll analyze this file against your job description.</p>
 
-                    <form action="/upload" method="post" enctype="multipart/form-data">
+                    <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form" class="loading-form" data-loading-text="Uploading and reading your resume...">
                         <div class="dropzone">
-                            <i class="bi bi-file-earmark-arrow-up dropzone-icon"></i>
+                            <i class="bi bi-file-earmark-arrow-up dropzone-icon" aria-hidden="true"></i>
                             <p class="dropzone-text">Click below to choose your resume file</p>
                             <label class="btn btn-upload" for="resume-file">
-                                <i class="bi bi-upload"></i> Upload Resume
-                                <input type="file" name="resume" id="resume-file" accept=".pdf,.docx" hidden onchange="this.form.submit()">
+                                <i class="bi bi-upload" aria-hidden="true"></i> Upload Resume
+                                <input type="file" name="resume" id="resume-file" accept=".pdf,.docx" hidden onchange="handleResumeSelect(this)" aria-label="Choose resume file (PDF or DOCX)">
                             </label>
+                            <p id="selected-file-name" class="selected-file-name"></p>
                             <div class="format-badges">
-                                <span class="format-badge"><i class="bi bi-filetype-pdf"></i> PDF</span>
-                                <span class="format-badge"><i class="bi bi-filetype-docx"></i> DOCX</span>
+                                <span class="format-badge"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> PDF</span>
+                                <span class="format-badge"><i class="bi bi-filetype-docx" aria-hidden="true"></i> DOCX</span>
                             </div>
                         </div>
                     </form>
@@ -187,15 +206,17 @@
                         </div>
                     {% endif %}
 
-                    <form id="jd-form" action="/analyze" method="post" class="jd-form">
+                    <form id="jd-form" action="/analyze" method="post" class="jd-form loading-form" data-loading-text="Analyzing your resume against the job description...">
                         <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                         <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_size_display" value="{{ upload_result.size_display if upload_result and upload_result.success else '' }}">
                         <input type="hidden" name="resume_page_count" value="{{ extraction_result.page_count if extraction_result and extraction_result.page_count else '' }}">
 
-                        <textarea class="jd-textarea" name="job_description"
-                                  placeholder="Paste the job description here...">{{ job_description or '' }}</textarea>
+                        <label for="job-description-input" class="visually-hidden">Job description</label>
+                        <textarea id="job-description-input" class="jd-textarea" name="job_description"
+                                  placeholder="Paste the job description here..." aria-describedby="jd-counter">{{ job_description or '' }}</textarea>
+                        <div id="jd-counter" class="jd-counter" aria-live="polite">0 characters &middot; 0 words</div>
 
                         {% if analysis and analysis.jd_result and not analysis.jd_result.success %}
                             <div class="field-error"><i class="bi bi-exclamation-circle"></i> {{ analysis.jd_result.error }}</div>
@@ -206,7 +227,7 @@
         </section>
 
         <section class="analyze-section">
-            <button class="btn btn-analyze" type="submit" form="jd-form">
+            <button class="btn btn-analyze" type="submit" form="jd-form" id="analyze-btn">
                 <i class="bi bi-stars"></i> Analyze Resume
             </button>
         </section>
@@ -246,15 +267,41 @@
                     <p class="section-subheading">Here's how your resume matches the job description.</p>
 
                     <div class="results-grid">
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-speedometer2"></i></div>
-                            <h3>ATS Score</h3>
-                            <p class="result-score">{{ r.ats_score }}<span>/100</span></p>
+                        {% set ats_val = r.ats_score | int(0) %}
+                        {% set match_val = r.resume_match_percentage | int(0) %}
+                        {% set circumference = 314.16 %}
+                        {% set ats_offset = circumference - (circumference * ats_val / 100) %}
+                        {% set match_offset = circumference - (circumference * match_val / 100) %}
+                        {% set ats_band = 'ring-low' if ats_val < 50 else ('ring-mid' if ats_val < 75 else 'ring-high') %}
+                        {% set match_band = 'ring-low' if match_val < 50 else ('ring-mid' if match_val < 75 else 'ring-high') %}
+
+                        <div class="result-card result-card-score">
+                            <h3><i class="bi bi-speedometer2" aria-hidden="true"></i> ATS Score</h3>
+                            <div class="score-ring-wrap">
+                                <svg viewBox="0 0 120 120" class="score-ring" role="img" aria-label="ATS score {{ ats_val }} out of 100">
+                                    <circle class="score-ring-track" cx="60" cy="60" r="50"></circle>
+                                    <circle class="score-ring-progress {{ ats_band }}" cx="60" cy="60" r="50"
+                                            stroke-dasharray="{{ circumference }}" stroke-dashoffset="{{ ats_offset }}"></circle>
+                                </svg>
+                                <div class="score-ring-label">
+                                    <span class="score-ring-value">{{ ats_val }}</span>
+                                    <span class="score-ring-max">/100</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="result-card">
-                            <div class="result-icon"><i class="bi bi-percent"></i></div>
-                            <h3>Resume Match</h3>
-                            <p class="result-score">{{ r.resume_match_percentage }}<span>%</span></p>
+                        <div class="result-card result-card-score">
+                            <h3><i class="bi bi-percent" aria-hidden="true"></i> Resume Match</h3>
+                            <div class="score-ring-wrap">
+                                <svg viewBox="0 0 120 120" class="score-ring" role="img" aria-label="Resume match {{ match_val }} percent">
+                                    <circle class="score-ring-track" cx="60" cy="60" r="50"></circle>
+                                    <circle class="score-ring-progress {{ match_band }}" cx="60" cy="60" r="50"
+                                            stroke-dasharray="{{ circumference }}" stroke-dashoffset="{{ match_offset }}"></circle>
+                                </svg>
+                                <div class="score-ring-label">
+                                    <span class="score-ring-value">{{ match_val }}</span>
+                                    <span class="score-ring-max">%</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="result-card">
                             <div class="result-icon"><i class="bi bi-file-text"></i></div>
@@ -456,7 +503,7 @@
                         <h2 class="section-heading section-heading-spaced">Resume Enhancement</h2>
                         <p class="section-subheading">Let the AI rewrite your resume for better ATS compatibility, based on this analysis.</p>
 
-                        <form action="/improve" method="post" class="improve-form">
+                        <form action="/improve" method="post" class="improve-form loading-form" data-loading-text="Rewriting your resume for better ATS compatibility...">
                             <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                             <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                             <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
@@ -579,7 +626,7 @@
                         <h2 class="section-heading section-heading-spaced">Cover Letter</h2>
                         <p class="section-subheading">Generate a tailored cover letter based on your resume, the job description, and this analysis.</p>
 
-                        <form action="/cover-letter" method="post" class="improve-form">
+                        <form action="/cover-letter" method="post" class="improve-form loading-form" data-loading-text="Writing your tailored cover letter...">
                             <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                             <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                             <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
@@ -648,7 +695,7 @@
                         <p class="section-subheading">Save or print a complete copy of your analysis, enhancement, and cover letter.</p>
 
                         <div class="export-buttons">
-                            <form action="/export/pdf" method="post">
+                            <form action="/export/pdf" method="post" class="loading-form" data-loading-text="Preparing your PDF report...">
                                 <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                                 <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                                 <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
@@ -663,7 +710,7 @@
                                 </button>
                             </form>
 
-                            <form action="/export/txt" method="post">
+                            <form action="/export/txt" method="post" class="loading-form" data-loading-text="Preparing your TXT report...">
                                 <input type="hidden" name="resume_text" value="{{ extraction_result.text if extraction_result and extraction_result.success else '' }}">
                                 <input type="hidden" name="resume_filename" value="{{ upload_result.filename if upload_result and upload_result.success else '' }}">
                                 <input type="hidden" name="resume_file_type" value="{{ upload_result.file_type if upload_result and upload_result.success else '' }}">
@@ -735,6 +782,14 @@
             <span>&copy; 2026 {{ app_name }}. Built to help you get past the filter.</span>
         </div>
     </footer>
+
+    <div id="loading-overlay" class="loading-overlay" role="status" aria-live="assertive" hidden>
+        <div class="loading-box">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <p id="loading-overlay-text">Working on it...</p>
+        </div>
+    </div>
+
     <script>
         function copyCoverLetter() {
             const text = document.getElementById('cover-letter-raw');
@@ -755,6 +810,61 @@
             if (!target) return;
             window.requestAnimationFrame(() => {
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        })();
+
+        function handleResumeSelect(input) {
+            const nameEl = document.getElementById('selected-file-name');
+            if (input.files && input.files[0] && nameEl) {
+                nameEl.textContent = 'Selected: ' + input.files[0].name;
+            }
+            showLoadingOverlay('Uploading and reading your resume...');
+            input.form.submit();
+        }
+
+        function showLoadingOverlay(message) {
+            const overlay = document.getElementById('loading-overlay');
+            const text = document.getElementById('loading-overlay-text');
+            if (text && message) text.textContent = message;
+            if (overlay) overlay.hidden = false;
+        }
+
+        document.querySelectorAll('.loading-form').forEach(function (form) {
+            form.addEventListener('submit', function () {
+                const message = form.getAttribute('data-loading-text') || 'Working on it...';
+                showLoadingOverlay(message);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
+                const externalBtn = document.querySelector('button[form="' + form.id + '"]');
+                if (externalBtn) externalBtn.disabled = true;
+            });
+        });
+
+        (function jdCounter() {
+            const textarea = document.getElementById('job-description-input');
+            const counter = document.getElementById('jd-counter');
+            if (!textarea || !counter) return;
+
+            function update() {
+                const text = textarea.value.trim();
+                const chars = textarea.value.length;
+                const words = text ? text.split(/\s+/).length : 0;
+                counter.textContent = chars + ' characters \u00B7 ' + words + ' words';
+            }
+
+            textarea.addEventListener('input', update);
+            update();
+        })();
+
+        (function themeToggle() {
+            const toggle = document.getElementById('theme-toggle');
+            if (!toggle) return;
+
+            toggle.addEventListener('click', function () {
+                const current = document.documentElement.getAttribute('data-theme');
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                localStorage.setItem('atsinsight-theme', next);
             });
         })();
     </script>
